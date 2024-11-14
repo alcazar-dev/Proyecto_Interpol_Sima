@@ -1,7 +1,0 @@
-flask
-pandas
-geopandas
-contextily
-matplotlib
-scipy
-pyproj
