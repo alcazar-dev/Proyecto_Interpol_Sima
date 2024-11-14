@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Contaminantes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Estilo para el header */
+        header {
+            background-color: #02bc70;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            font-size: 1.2em;
+            z-index: 10; /* Asegura que el header esté por encima del contenido */
+        }
+        
+        /* Ajuste de margen superior para el contenido */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            font-size: 1.2em;
+        }
+        
+        h1 {
+            margin: 0;
+            color: white; /* Asegura que el título sea blanco */
+        }
+
+        /* Estilo para el formulario */
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            max-width: 400px;
+            margin: 120px auto 0; /* Espacio superior aumentado */
+            position: relative;
+            z-index: 1; /* Asegura que el formulario no sobrepase el header */
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        /* Estilo para los inputs y selects */
+        input[type="date"],
+        input[type="time"],
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* Estilo para el botón */
+        button {
+            background-color: #02bc70;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Cambiar color del botón al pasar el mouse */
+        button:hover {
+            background-color: #029b5d;
+        }
+
+        /* Estilo para el checkbox */
+        input[type="checkbox"] {
+            accent-color: #02bc70;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mapa de Gradiente de Contaminantes</h1>
+    </header>
+
+    <form id="form">
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha" required>
+
+        <label for="hora">Hora:</label>
+        <input type="time" id="hora" name="hora" required>
+
+        <label for="contaminante">Contaminante:</label>
+        <select id="contaminante" name="contaminante" required>
+            <option value="CO">CO</option>
+            <option value="NO">NO</option>
+            <option value="NO2">NO2</option>
+            <option value="NOX">NOX</option>
+            <option value="O3">O3</option>
+            <option value="PM10">PM10</option>
+            <option value="PM2.5">PM2.5</option>
+            <option value="SO2">SO2</option>
+        </select>
+
+        <label for="daily">Datos por día (gif):</label>
+        <input type="checkbox" id="daily" name="daily">
+
+        <button type="submit">Generar Mapa</button>
+    </form>
+
+    <div id="map-container">
+        <img id="loading-gif" src="{{ url_for('static', filename='cosas/LOADING.gif') }}" alt="Cargando..." 
+        style="display: none; width: 100px; height: auto; margin-top: 50px;">
+   
+        <img id="map-image" src="" alt="Mapa de Contaminantes" style="display:none;">
+        <img id="gif-image" src="" alt="GIF de Contaminantes" style="display:none;">
+    </div>
+    <p id="error-message" style="color: red; display:none;"></p>
+
+    <script>
+        $(document).ready(function() {
+            $('#daily').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#hora').prop('disabled', true);
+                } else {
+                    $('#hora').prop('disabled', false);
+                }
+            });
+
+            $('#form').submit(function(event) {
+                event.preventDefault();
+
+                // Mostrar el GIF de carga
+                $('#loading-gif').show();
+                $('#map-image').hide();
+                $('#gif-image').hide();
+                $('#error-message').hide();
+
+                const isDaily = $('#daily').is(':checked');
+
+                $.ajax({
+                    url: isDaily ? '/generate_gif' : '/generate_map',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#loading-gif').hide();  // Ocultar el GIF de carga
+                        if (isDaily && response.gif_path) {
+                            $('#gif-image').attr('src', response.gif_path).show();
+                        } else if (!isDaily && response.image_base64) {
+                            $('#map-image').attr('src', 'data:image/png;base64,' + response.image_base64).show();
+                        } else if (response.error) {
+                            $('#error-message').text(response.error).show();
+                        }
+                    },
+                    error: function() {
+                        $('#loading-gif').hide();  // Ocultar el GIF de carga si hay error
+                        $('#error-message').text('Error al generar el mapa o GIF. Inténtalo de nuevo más tarde.').show();
+                    }
+
+                });
+            });
+        });
+    </script>
+</body>
+</html>
