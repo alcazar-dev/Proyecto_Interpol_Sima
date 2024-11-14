@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Contaminantes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Mapa de Gradiente de Contaminantes</h1>
+    <form id="form">
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha" required>
+
+        <label for="hora">Hora:</label>
+        <input type="time" id="hora" name="hora" required>
+
+        <label for="contaminante">Contaminante:</label>
+        <select id="contaminante" name="contaminante" required>
+            <option value="CO">CO</option>
+            <option value="NO">NO</option>
+            <option value="NO2">NO2</option>
+            <option value="NOX">NOX</option>
+            <option value="O3">O3</option>
+            <option value="PM10">PM10</option>
+            <option value="PM2.5">PM2.5</option>
+            <option value="SO2">SO2</option>
+        </select>
+
+        <button type="submit">Generar Mapa</button>
+    </form>
+
+    <div id="map-container">
+        <img id="map-image" src="" alt="Mapa de Contaminantes" style="display:none;">
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#form').submit(function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '/generate_map',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#map-image').attr('src', 'data:image/png;base64,' + response.image_base64).show();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
